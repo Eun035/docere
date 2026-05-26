@@ -1,7 +1,6 @@
 import express from "express";
 import path from "path";
 import dotenv from "dotenv";
-import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 
 dotenv.config();
@@ -44,7 +43,7 @@ app.post("/api/analyze", async (req, res) => {
     const ai = getGeminiClient();
 
     let contentParts: any[] = [];
-    
+
     if (image) {
       contentParts.push({
         inlineData: {
@@ -127,9 +126,15 @@ ${text ? `라틴어/종교 문구: "${text}"` : "첨부된 비문 이미지 분�
   }
 });
 
-// Setup Vite development server or production assets hosting
+// Export Express app for Vercel serverless (and other re-use)
+export default app;
+
+// Local development / production server entry — Vite is dynamically imported so
+// that this file can also be consumed as a Vercel serverless function without
+// pulling Vite into the cold-start bundle.
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
@@ -139,7 +144,7 @@ async function startServer() {
     // In production, serve build artifacts from /dist
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
-    app.get("*", (req, res) => {
+    app.get("*", (_req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
     });
   }
@@ -149,4 +154,7 @@ async function startServer() {
   });
 }
 
-startServer();
+// Vercel sets the VERCEL env var on its runtime — skip starting a local server there.
+if (!process.env.VERCEL) {
+  startServer();
+}

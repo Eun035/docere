@@ -5,7 +5,6 @@ import {
   Upload,
   X,
   Sparkles,
-  Compass,
   Bookmark,
   Check,
   RefreshCw,
@@ -15,9 +14,10 @@ import {
   Copy
 } from "lucide-react";
 import { PresetInscription, AnalysisResult, HistoryItem } from "./types";
-import { PRESET_INSCRIPTIONS } from "./data";
 import { PresetGallery } from "./components/PresetGallery";
 import { InscriptionHistory } from "./components/InscriptionHistory";
+import { CameraCapture } from "./components/CameraCapture";
+import { CandleBookHero } from "./components/CandleBookHero";
 
 export default function App() {
   // Input states
@@ -39,7 +39,8 @@ export default function App() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isSaved, setIsSaved] = useState(false);
   const [shareStatus, setShareStatus] = useState<"idle" | "copied">("idle");
-  
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+
   // Image input ref
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -52,28 +53,8 @@ export default function App() {
       } catch (e) {
         console.error("Failed to parse history from localStorage", e);
       }
-    } else {
-      // Default initial welcome item if history is empty
-      const welcomeItem: HistoryItem = {
-        id: "welcome-assisi",
-        timestamp: new Date().toISOString(),
-        inputText: "PAX ET BONVM",
-        locationName: "아시시 성 프란치스코 성당",
-        result: {
-          purifiedText: "PAX ET BONUM",
-          biblicalReference: "프란치스코회 영성 운동의 대표 슬로건 (아시시의 성 프란치스코 평화의 기도)",
-          translationLiteral: "[직역] 평화와 선.",
-          translationContextual: "[의역] 주님의 평화와 착함(선)이 항상 여러분과 함께 하기를 기원합니다.",
-          linguisticInsight: "Pax(평화)는 라틴어 여성 명사로 고요와 정신적 화해를 상징하며, Bonum(선)은 본질적인 선함과 하느님의 창조 은총을 의미합니다.",
-          meditation: "이 평화와 선의 인사는 물질적 소유를 버리고 온전히 주님과 자연 안에서 참된 기쁨을 찾고자 했던 성 프란치스코의 미소를 소환합니다. 지친 순례 일상 속에서 타인에게 이 평화를 가만히 빌어 보십시오.",
-          rawMarkdown: "### Welcome to Verbum Vitae\n평화와 선이 순례길 위에 함께하기를 바랍니다."
-        }
-      };
-      setHistory([welcomeItem]);
-      setActiveAnalysis(welcomeItem.result);
-      setActiveHistoryItem(welcomeItem);
-      setIsSaved(true);
     }
+    // First-time visitors see the candlelight welcome screen — no auto-analysis preload.
   }, []);
 
   // Save changes to localStorage helper
@@ -136,6 +117,15 @@ export default function App() {
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+  };
+
+  // Handle live camera capture result
+  const handleCameraCapture = (dataUrl: string, mime: string) => {
+    setImageMime(mime);
+    setSelectedImage(dataUrl);
+    setErrorMessage(null);
+    setIsCameraOpen(false);
+    handleAnalyze(inputText, locationName || "촬영된 비문 성지", dataUrl, mime);
   };
 
   // Trigger backend analysis
@@ -381,27 +371,36 @@ export default function App() {
                 </label>
 
                 {!selectedImage ? (
-                  <div
-                    onDragOver={handleDragOver}
-                    onDrop={handleDrop}
-                    onClick={() => fileInputRef.current?.click()}
-                    className="border border-dashed border-[#D9D1C1] hover:border-[#8C7355] rounded-lg p-4 text-center cursor-pointer transition-colors bg-white/70 flex flex-col items-center justify-center space-y-1.5"
-                  >
-                    <Upload className="w-6 h-6 text-[#b39256]" />
-                    <p className="text-[10px] font-sans text-stone-500">
-                      정밀 인식을 위해 이미지를 드래그하거나 클릭하여 업로드
-                    </p>
-                    <p className="text-[9px] font-sans text-stone-400">
-                      스마트폰인 경우 즉시 실시간 카메라 촬영도 지원합니다
-                    </p>
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleFileChange}
-                      accept="image/*"
-                      capture="environment"
-                      className="hidden"
-                    />
+                  <div className="space-y-2">
+                    <div
+                      onDragOver={handleDragOver}
+                      onDrop={handleDrop}
+                      onClick={() => fileInputRef.current?.click()}
+                      className="border border-dashed border-[#D9D1C1] hover:border-[#8C7355] rounded-lg p-4 text-center cursor-pointer transition-colors bg-white/70 flex flex-col items-center justify-center space-y-1.5"
+                    >
+                      <Upload className="w-6 h-6 text-[#b39256]" />
+                      <p className="text-[10px] font-sans text-stone-500">
+                        정밀 인식을 위해 이미지를 드래그하거나 클릭하여 업로드
+                      </p>
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        accept="image/*"
+                        className="hidden"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setErrorMessage(null);
+                        setIsCameraOpen(true);
+                      }}
+                      className="w-full py-2 px-3 rounded-lg border border-[#8C7355]/40 bg-white hover:bg-[#F4EFE6] text-[#8C7355] font-sans text-[11px] uppercase tracking-widest font-bold flex items-center justify-center gap-1.5 transition-all"
+                    >
+                      <Camera className="w-3.5 h-3.5" />
+                      카메라로 직접 촬영
+                    </button>
                   </div>
                 ) : (
                   <div className="relative rounded-lg overflow-hidden border border-[#D9D1C1] bg-stone-100 max-h-36 flex justify-center items-center">
@@ -410,13 +409,23 @@ export default function App() {
                       alt="Uploaded Pilgrim Inscription"
                       className="max-h-36 object-contain w-full"
                     />
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-2 opacity-0 hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => fileInputRef.current?.click()}
                         className="bg-white/90 text-stone-800 text-[10px] font-sans px-2.5 py-1 rounded-sm border border-[#D9D1C1] flex items-center gap-1"
                       >
+                        <Upload className="w-3.5 h-3.5 text-[#8C7355]" />
+                        파일 변경
+                      </button>
+                      <button
+                        onClick={() => {
+                          setErrorMessage(null);
+                          setIsCameraOpen(true);
+                        }}
+                        className="bg-white/90 text-stone-800 text-[10px] font-sans px-2.5 py-1 rounded-sm border border-[#D9D1C1] flex items-center gap-1"
+                      >
                         <Camera className="w-3.5 h-3.5 text-[#8C7355]" />
-                        사진 다시 촬영 / 변경
+                        다시 촬영
                       </button>
                     </div>
                   </div>
@@ -671,18 +680,35 @@ export default function App() {
             </footer>
           </div>
         ) : (
-          /* Empty / Default Beautiful Greeting Card layout in absence of search (unlikely since we load welcome Assisi) */
-          <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border-4 border-dashed border-[#E6E2D3] rounded-2xl bg-[#F9F7F2]/50 max-w-3xl mx-auto my-12">
-            <Compass className="w-16 h-16 text-[#8C7355] mb-4 animate-spin-slow" />
-            <h2 className="text-3xl font-serif italic text-stone-800 mb-2">Verbum Vitae를 가동하십시오</h2>
-            <p className="font-sans text-xs text-stone-500 max-w-md leading-relaxed">
-              성지 순례 중 발견한 라틴어, 스페인어, 이탈리아어 글귀를 직접 입력하거나 촬영 파일을 전송하십시오. 
-              즉각적인 신학적 고찰, 성서적 부합지정, 정교한 직역/의역, 그리고 마음을 위로하는 순례길 순전한 묵상을 선물합니다.
-            </p>
+          /* Welcome screen — candlelight hero illustration */
+          <div className="flex-1 flex flex-col items-center justify-center text-center max-w-3xl mx-auto my-8">
+            <div className="w-full max-w-md rounded-2xl overflow-hidden shadow-2xl ring-1 ring-[#8C7355]/30">
+              <CandleBookHero className="w-full h-auto block" />
+            </div>
+            <div className="mt-8 space-y-3">
+              <div className="text-[10px] uppercase tracking-[0.4em] text-[#8C7355] font-sans font-bold">
+                Lumen in Tenebris
+              </div>
+              <h2 className="text-3xl md:text-4xl font-serif italic text-stone-800">
+                Verbum Vitae를 가동하십시오
+              </h2>
+              <p className="font-sans text-xs text-stone-500 max-w-md leading-relaxed mx-auto">
+                성지 순례 중 발견한 라틴어, 스페인어, 이탈리아어 글귀를 직접 입력하시거나
+                카메라로 촬영해 주십시오. 신학적 고찰과 성서적 부합지정,
+                정교한 직역·의역, 그리고 마음을 위로하는 순례길 묵상을 선물합니다.
+              </p>
+            </div>
           </div>
         )}
 
       </main>
+
+      {isCameraOpen && (
+        <CameraCapture
+          onCapture={handleCameraCapture}
+          onClose={() => setIsCameraOpen(false)}
+        />
+      )}
 
     </div>
   );
