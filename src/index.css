@@ -1,0 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Playfair Display", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+/* Custom visual styling to replicate aged cathedral stone and manuscript papers */
+.bg-parchment {
+  background-color: #fbfaf7;
+}
+
+.text-charcoal {
+  color: #2c2a29;
+}
+
+.border-bronze {
+  border-color: #c5a872;
+}
+
+.text-bronze {
+  color: #b39256;
+}
+
+/* Glowing interactive focus values */
+.focus-ring-bronze:focus {
+  outline: 2px solid #c5a872;
+  outline-offset: 2px;
+}
