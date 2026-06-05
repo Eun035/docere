@@ -86,6 +86,145 @@ docere/
 
 ---
 
+## 🗺️ 워크플로우 시각화
+
+### 1) 사용자 여정 (End-to-End Sequence)
+
+순례자가 비문을 만나서 묵상까지 가는 4가지 진입 경로와 그 이후 흐름입니다.
+
+```mermaid
+sequenceDiagram
+    actor User as 🧎 순례자
+    participant UI as React App
+    participant Cam as 📷 CameraCapture
+    participant API as /api/analyze
+    participant Gem as 🧠 Gemini 2.5 Flash
+    participant LS as 💾 localStorage
+
+    Note over UI: 첫 진입 — 촛불 + 책 일러스트
+
+    alt 텍스트 직접 입력
+        User->>UI: 라틴어 구절 타이핑
+    else 이미지 업로드 / 드래그
+        User->>UI: 파일 선택
+    else 카메라 촬영
+        User->>Cam: 셔터 클릭
+        Cam-->>UI: base64 JPEG
+    else 추천 비문 선택
+        User->>UI: Preset 카드 클릭
+    end
+
+    UI->>API: POST { text?, image?, imageMime? }
+    API->>Gem: generateContent + responseSchema
+    Gem-->>API: 7-field JSON
+    API-->>UI: AnalysisResult
+    UI->>UI: 결과 렌더 + 입력창 자동 동기화
+
+    opt 묵상 수첩 보존
+        User->>UI: "보존" 클릭
+        UI->>LS: history 저장
+    end
+
+    opt 공유
+        User->>UI: "공유" 클릭
+        alt Web Share API 가용 (모바일/HTTPS)
+            UI-->>User: 네이티브 공유 시트
+        else 폴백
+            UI->>UI: 클립보드 복사 + 2초 피드백
+        end
+    end
+```
+
+### 2) 컴포넌트 아키텍처 (Structural View)
+
+브라우저·서버·AI 레이어의 모듈 책임과 데이터 라인입니다.
+
+```mermaid
+flowchart TB
+    subgraph Browser["🌐 Browser — React 19 + Vite 6"]
+        direction TB
+        Hero["CandleBookHero<br/>(빈 화면 일러스트)"]
+        Form["입력 폼<br/>위치 · 텍스트"]
+        Cam["CameraCapture<br/>getUserMedia"]
+        Upload["Drag & Drop"]
+        Preset["PresetGallery<br/>(사전 검증된 카드)"]
+        Result["분석 결과 패널<br/>5개 섹션"]
+        History["InscriptionHistory<br/>(검색 가능)"]
+        Share["공유 버튼"]
+    end
+
+    subgraph Storage["💾 Client"]
+        LS[("localStorage<br/>latin_docent_history_v1")]
+    end
+
+    subgraph Server["⚙️ Server Layer"]
+        Express["Express<br/>server.ts<br/>(로컬 dev/prod)"]
+        Vercel["Vercel Serverless<br/>api/analyze.ts<br/>(공유 코드 재사용)"]
+    end
+
+    subgraph AI["🧠 AI"]
+        Gemini["Gemini 2.5 Flash<br/>JSON Schema 강제"]
+    end
+
+    Form -->|텍스트| Express
+    Cam -->|base64| Express
+    Upload -->|base64| Express
+    Preset -->|텍스트| Express
+    Form & Cam & Upload & Preset -.운영.-> Vercel
+
+    Express --> Gemini
+    Vercel --> Gemini
+    Gemini --> Result
+    Result --> History
+    Result --> Share
+    History <--> LS
+```
+
+### 3) 분석 엔드포인트 데이터 플로우
+
+[`/api/analyze`](server.ts) 내부에서 요청이 어떻게 처리되는지 보여줍니다.
+
+```mermaid
+flowchart LR
+    In[/"text · image · imageMime"/] --> Chk{"text & image<br/>둘 다 비었나?"}
+    Chk -->|예| E400["400<br/>입력 없음"]
+    Chk -->|아니오| Build["프롬프트 조립<br/>+ inlineData 첨부"]
+    Build --> Call["Gemini API<br/>responseMimeType=json<br/>responseSchema 강제"]
+    Call -->|성공| Parse["JSON.parse"]
+    Call -->|실패| E500["500<br/>에러 메시지"]
+    Parse --> Out[/"AnalysisResult:<br/>purifiedText · biblicalReference<br/>translationLiteral · translationContextual<br/>linguisticInsight · meditation<br/>rawMarkdown"/]
+```
+
+### 4) 배포 토폴로지
+
+로컬 개발과 Vercel 배포가 같은 Express 앱을 어떻게 공유하는지 보여줍니다.
+
+```mermaid
+flowchart LR
+    subgraph Dev["💻 로컬 개발"]
+        Tsx["tsx server.ts"]
+        Vite["Vite Dev Middleware<br/>(동적 import)"]
+        Tsx --> Vite
+    end
+
+    subgraph Repo["📦 GitHub: Eun035/docere"]
+        Code["main 브랜치"]
+    end
+
+    subgraph Prod["☁️ Vercel"]
+        Static["정적 자산<br/>(vite build → dist/)"]
+        Func["Serverless Function<br/>api/analyze.ts<br/>→ import default app"]
+    end
+
+    Dev -.push.-> Repo
+    Repo -->|자동 빌드| Static
+    Repo -->|자동 빌드| Func
+    Static -->|/| User1((사용자))
+    Func -->|/api/analyze| User1
+```
+
+---
+
 ## ☁️ 배포 — Vercel
 
 이 저장소는 Vercel serverless 함수로 즉시 배포되도록 설정되어 있습니다.
