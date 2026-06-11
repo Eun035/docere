@@ -1,0 +1,34 @@
+{
+  "name": "Verbum Vitae — 라틴어 비문 도슨트",
+  "short_name": "Verbum Vitae",
+  "description": "유럽 성당·묘비·수도원에 새겨진 라틴어 비문을 신학적·언어학적으로 해독하는 AI 순례 도슨트",
+  "lang": "ko",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#1A0F08",
+  "background_color": "#FDFCF8",
+  "categories": ["education", "books", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}
