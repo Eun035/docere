@@ -11,10 +11,12 @@ const svgPath = path.join(root, "public", "icon.svg");
 const outDir = path.join(root, "public");
 
 const targets = [
-  { file: "icon-192.png", size: 192 },
-  { file: "icon-512.png", size: 512 },
-  { file: "apple-touch-icon.png", size: 180 },
-  { file: "favicon-32.png", size: 32 },
+  { file: "icon-1024.png", size: 1024 }, // marketing / app store / AI Studio gallery
+  { file: "icon-512.png", size: 512 },   // PWA standard + splash
+  { file: "icon-192.png", size: 192 },   // PWA home screen
+  { file: "apple-touch-icon.png", size: 180 }, // iOS home screen
+  { file: "favicon-32.png", size: 32 },  // legacy browser favicon
+  { file: "favicon-16.png", size: 16 },  // smallest tab favicon
 ];
 
 const svg = await readFile(svgPath);
