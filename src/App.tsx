@@ -11,8 +11,10 @@ import {
   BookMarked,
   AlertTriangle,
   Share2,
-  Copy
+  Copy,
+  ImageDown
 } from "lucide-react";
+import { saveMeditationCard } from "./utils/saveMeditationCard";
 import { PresetInscription, AnalysisResult, HistoryItem } from "./types";
 import { PresetGallery } from "./components/PresetGallery";
 import { InscriptionHistory } from "./components/InscriptionHistory";
@@ -38,6 +40,7 @@ export default function App() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isSaved, setIsSaved] = useState(false);
   const [shareStatus, setShareStatus] = useState<"idle" | "copied">("idle");
+  const [saveImageStatus, setSaveImageStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [isCameraOpen, setIsCameraOpen] = useState(false);
 
   // Image input ref
@@ -255,6 +258,27 @@ export default function App() {
       // User cancelled share — silently ignore
       if ((err as any)?.name === "AbortError") return;
       setErrorMessage("공유에 실패했습니다. 브라우저 권한이나 보안 컨텍스트(HTTPS)를 확인해 주세요.");
+    }
+  };
+
+  // Save current meditation as a PNG image to the device (phone gallery via
+  // Web Share API on mobile, or download folder on desktop).
+  const handleSaveImage = async () => {
+    if (!activeAnalysis || saveImageStatus === "saving") return;
+    setSaveImageStatus("saving");
+    try {
+      await saveMeditationCard({
+        analysis: activeAnalysis,
+        locationName: activeHistoryItem?.locationName,
+      });
+      setSaveImageStatus("saved");
+      setTimeout(() => setSaveImageStatus("idle"), 2200);
+    } catch (err: any) {
+      console.error("Save image failed", err);
+      setErrorMessage(
+        err?.message || "묵상 카드 이미지를 만들 수 없습니다. 다시 시도해 주세요."
+      );
+      setSaveImageStatus("idle");
     }
   };
 
@@ -640,7 +664,32 @@ export default function App() {
                 <span>성구 해설본 고해상 보존 가능</span>
               </div>
               
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  onClick={handleSaveImage}
+                  disabled={saveImageStatus === "saving"}
+                  className="px-4 py-2 border border-[#8C7355]/40 rounded-md uppercase tracking-wider text-[10px] font-bold transition-all flex items-center justify-center gap-1.5 bg-white hover:bg-[#F4EFE6] text-[#8C7355] cursor-pointer disabled:opacity-60 disabled:cursor-wait"
+                  title="이 묵상을 묵상 카드 이미지(.png)로 폰 갤러리 또는 다운로드 폴더에 저장"
+                  aria-label="이미지로 저장"
+                >
+                  {saveImageStatus === "saving" ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      카드 생성 중...
+                    </>
+                  ) : saveImageStatus === "saved" ? (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      저장 완료
+                    </>
+                  ) : (
+                    <>
+                      <ImageDown className="w-3.5 h-3.5" />
+                      이미지로 저장
+                    </>
+                  )}
+                </button>
+
                 <button
                   onClick={handleShare}
                   className="px-4 py-2 border border-[#8C7355]/40 rounded-md uppercase tracking-wider text-[10px] font-bold transition-all flex items-center justify-center gap-1.5 bg-white hover:bg-[#F4EFE6] text-[#8C7355] cursor-pointer"
