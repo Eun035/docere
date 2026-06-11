@@ -17,8 +17,6 @@ import { PresetInscription, AnalysisResult, HistoryItem } from "./types";
 import { PresetGallery } from "./components/PresetGallery";
 import { InscriptionHistory } from "./components/InscriptionHistory";
 import { CameraCapture } from "./components/CameraCapture";
-import { CandleBookHero } from "./components/CandleBookHero";
-import { SplashScreen } from "./components/SplashScreen";
 
 export default function App() {
   // Input states
@@ -41,7 +39,6 @@ export default function App() {
   const [isSaved, setIsSaved] = useState(false);
   const [shareStatus, setShareStatus] = useState<"idle" | "copied">("idle");
   const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const [isSplashing, setIsSplashing] = useState(true);
 
   // Image input ref
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -290,9 +287,7 @@ export default function App() {
   };
 
   return (
-    <>
-      {isSplashing && <SplashScreen onComplete={() => setIsSplashing(false)} />}
-      <div className="min-h-screen bg-[#FDFCF8] text-[#1A1A1A] font-serif border-8 border-[#E6E2D3] flex flex-col md:flex-row transition-all duration-300">
+    <div className="min-h-screen bg-[#FDFCF8] text-[#1A1A1A] font-serif border-8 border-[#E6E2D3] flex flex-col md:flex-row transition-all duration-300">
       
       {/* Sidebar: Historical / Settings Controls */}
       <aside className="w-full md:w-[360px] lg:w-[400px] border-b md:border-b-0 md:border-r border-[#D9D1C1] flex flex-col bg-[#F9F7F2] shrink-0 overflow-y-auto">
@@ -686,21 +681,13 @@ export default function App() {
         ) : (
           /* Welcome screen — candlelight hero illustration */
           <div className="flex-1 flex flex-col items-center justify-center text-center max-w-3xl mx-auto my-8">
-            <div className="w-full max-w-md rounded-2xl overflow-hidden shadow-2xl ring-1 ring-[#8C7355]/30">
-              <CandleBookHero className="w-full h-auto block" />
-            </div>
-            <div className="mt-8 space-y-3">
+            <div className="space-y-3">
               <div className="text-[10px] uppercase tracking-[0.4em] text-[#8C7355] font-sans font-bold">
                 Lumen in Tenebris
               </div>
               <h2 className="text-3xl md:text-4xl font-serif italic text-stone-800">
                 Verbum Vitae를 가동하십시오
               </h2>
-              <p className="font-sans text-xs text-stone-500 max-w-md leading-relaxed mx-auto">
-                성지 순례 중 발견한 라틴어, 스페인어, 이탈리아어 글귀를 직접 입력하시거나
-                카메라로 촬영해 주십시오. 신학적 고찰과 성서적 부합지정,
-                정교한 직역·의역, 그리고 마음을 위로하는 순례길 묵상을 선물합니다.
-              </p>
             </div>
           </div>
         )}
@@ -715,6 +702,5 @@ export default function App() {
       )}
 
     </div>
-    </>
   );
 }
