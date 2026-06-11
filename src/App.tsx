@@ -18,6 +18,7 @@ import { PresetGallery } from "./components/PresetGallery";
 import { InscriptionHistory } from "./components/InscriptionHistory";
 import { CameraCapture } from "./components/CameraCapture";
 import { CandleBookHero } from "./components/CandleBookHero";
+import { SplashScreen } from "./components/SplashScreen";
 
 export default function App() {
   // Input states
@@ -40,6 +41,7 @@ export default function App() {
   const [isSaved, setIsSaved] = useState(false);
   const [shareStatus, setShareStatus] = useState<"idle" | "copied">("idle");
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [isSplashing, setIsSplashing] = useState(true);
 
   // Image input ref
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -288,7 +290,9 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFCF8] text-[#1A1A1A] font-serif border-8 border-[#E6E2D3] flex flex-col md:flex-row transition-all duration-300">
+    <>
+      {isSplashing && <SplashScreen onComplete={() => setIsSplashing(false)} />}
+      <div className="min-h-screen bg-[#FDFCF8] text-[#1A1A1A] font-serif border-8 border-[#E6E2D3] flex flex-col md:flex-row transition-all duration-300">
       
       {/* Sidebar: Historical / Settings Controls */}
       <aside className="w-full md:w-[360px] lg:w-[400px] border-b md:border-b-0 md:border-r border-[#D9D1C1] flex flex-col bg-[#F9F7F2] shrink-0 overflow-y-auto">
@@ -711,5 +715,6 @@ export default function App() {
       )}
 
     </div>
+    </>
   );
 }
