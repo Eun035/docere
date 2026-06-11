@@ -477,17 +477,23 @@ export default function App() {
 
         </div>
 
-        {/* Sidebar Footer */}
-        <div className="p-4 border-t border-[#D9D1C1] bg-stone-100 font-sans text-[10px] text-stone-500 flex justify-between items-center shrink-0">
-          <span className="flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#8C7355]"></span>
-            학술 전승 모드 상공 가용
-          </span>
-          <span className="opacity-70">Verbum Vitae © 2026</span>
+        {/* Sidebar Bottom Title Block */}
+        <div className="px-6 py-7 border-t border-[#D9D1C1] bg-[#F4EFE6]/30 shrink-0">
+          <div className="text-[10px] uppercase tracking-[0.4em] text-[#8C7355] font-sans font-bold mb-2">
+            Lumen in Tenebris
+          </div>
+          <h2 className="text-2xl font-serif italic text-stone-800 leading-tight">
+            Verbum Vitae를 가동하십시오
+          </h2>
+          <div className="mt-5 text-[9px] text-stone-400 font-sans tracking-widest uppercase opacity-70">
+            Verbum Vitae © 2026
+          </div>
         </div>
       </aside>
 
-      {/* Main Analysis Panel: Styled with pure Editorial Classic Aesthetic */}
+      {/* Main Analysis Panel — only rendered once an analysis result (or error) exists.
+          On the empty welcome state the sidebar stands alone. */}
+      {(activeAnalysis || errorMessage) && (
       <main className="flex-1 flex flex-col p-6 md:p-12 relative overflow-y-auto">
 
         {/* Decorative Background Cross/Rosette watermark */}
@@ -520,8 +526,8 @@ export default function App() {
           </div>
         )}
 
-        {/* Dynamic Interactive Layout based on whether an analysis exists */}
-        {activeAnalysis ? (
+        {/* Analysis Result Layout */}
+        {activeAnalysis && (
           <div className="space-y-8 flex-1 flex flex-col justify-between">
             <div className="space-y-8">
               {/* Dynamic Cathedral Header */}
@@ -678,21 +684,10 @@ export default function App() {
               </div>
             </footer>
           </div>
-        ) : (
-          /* Welcome screen — candlelight hero illustration */
-          <div className="flex-1 flex flex-col items-center justify-center text-center max-w-3xl mx-auto my-8">
-            <div className="space-y-3">
-              <div className="text-[10px] uppercase tracking-[0.4em] text-[#8C7355] font-sans font-bold">
-                Lumen in Tenebris
-              </div>
-              <h2 className="text-3xl md:text-4xl font-serif italic text-stone-800">
-                Verbum Vitae를 가동하십시오
-              </h2>
-            </div>
-          </div>
         )}
 
       </main>
+      )}
 
       {isCameraOpen && (
         <CameraCapture
