@@ -2,6 +2,14 @@ import express from "express";
 import path from "path";
 import dotenv from "dotenv";
 import { GoogleGenAI, Type } from "@google/genai";
+import {
+  DAILY_FREE_LIMIT,
+  DAY_PASS_PRICE_KRW,
+  claimPaymentOrder,
+  getStatus,
+  grantDayPass,
+  recordUsage,
+} from "./src/server/quota";
 
 dotenv.config();
 
@@ -31,13 +39,90 @@ function getGeminiClient(): GoogleGenAI {
   return aiClient;
 }
 
-// API endpoint to analyze inscriptions
+// ----- GET /api/usage : current quota state for an anonymous user -----
+app.get("/api/usage", async (req, res) => {
+  try {
+    const userId = String(req.query.userId ?? "").trim();
+    if (!userId) return res.status(400).json({ error: "userId가 필요합니다." });
+    const status = await getStatus(userId);
+    return res.json(status);
+  } catch (err: any) {
+    console.error("Usage Error:", err);
+    return res.status(500).json({ error: err?.message || "사용량 조회 실패" });
+  }
+});
+
+// ----- POST /api/payment/confirm : verify a Toss payment, grant day pass -----
+app.post("/api/payment/confirm", async (req, res) => {
+  try {
+    const { userId, paymentKey, orderId, amount } = req.body ?? {};
+    if (!userId || !paymentKey || !orderId || !amount) {
+      return res.status(400).json({ error: "결제 확인에 필요한 정보가 누락되었습니다." });
+    }
+    if (Number(amount) !== DAY_PASS_PRICE_KRW) {
+      return res.status(400).json({ error: "결제 금액이 일치하지 않습니다." });
+    }
+
+    // Idempotency: ignore duplicate confirmations of the same orderId.
+    const fresh = await claimPaymentOrder(orderId);
+    if (!fresh) {
+      const status = await getStatus(userId);
+      return res.json({ ok: true, alreadyConfirmed: true, status });
+    }
+
+    const secret = process.env.TOSS_SECRET_KEY;
+    if (!secret) {
+      return res.status(500).json({ error: "TOSS_SECRET_KEY가 설정되지 않았습니다." });
+    }
+
+    // Toss confirm API: Basic auth with `${secretKey}:` base64 encoded.
+    const authHeader = "Basic " + Buffer.from(secret + ":").toString("base64");
+    const tossRes = await fetch("https://api.tosspayments.com/v1/payments/confirm", {
+      method: "POST",
+      headers: {
+        Authorization: authHeader,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ paymentKey, orderId, amount }),
+    });
+    const tossJson: any = await tossRes.json().catch(() => ({}));
+    if (!tossRes.ok) {
+      return res.status(402).json({
+        error: tossJson?.message || "토스 결제 승인에 실패했습니다.",
+        code: tossJson?.code,
+      });
+    }
+
+    await grantDayPass(userId);
+    const status = await getStatus(userId);
+    return res.json({ ok: true, status, payment: { orderId, amount } });
+  } catch (err: any) {
+    console.error("Payment Confirm Error:", err);
+    return res.status(500).json({ error: err?.message || "결제 확인 중 오류가 발생했습니다." });
+  }
+});
+
+// API endpoint to analyze inscriptions (quota-gated)
 app.post("/api/analyze", async (req, res) => {
   try {
-    const { text, image, imageMime } = req.body;
+    const { text, image, imageMime, userId } = req.body;
 
+    if (!userId) {
+      return res.status(400).json({ error: "userId가 필요합니다." });
+    }
     if (!text && !image) {
       return res.status(400).json({ error: "분석할 라틴어 문구 텍스트나 촬영된 이미지를 제공해 주세요." });
+    }
+
+    // Quota gate: free DAILY_FREE_LIMIT uses per KST day unless a day pass is active.
+    const preStatus = await getStatus(userId);
+    if (preStatus.blocked) {
+      return res.status(402).json({
+        error: `오늘의 무료 ${DAILY_FREE_LIMIT}회 한도를 모두 사용하셨습니다. 1일권을 구매하시면 자정까지 무제한 분석할 수 있습니다.`,
+        code: "QUOTA_EXCEEDED",
+        status: preStatus,
+        dayPassPrice: DAY_PASS_PRICE_KRW,
+      });
     }
 
     const ai = getGeminiClient();
@@ -118,7 +203,15 @@ ${text ? `라틴어/종교 문구: "${text}"` : "첨부된 비문 이미지 분�
     }
 
     const parsedResult = JSON.parse(resultText.trim());
-    return res.json(parsedResult);
+
+    // Record the usage *after* a successful Gemini response so that failed
+    // calls don't burn the user's free quota.
+    await recordUsage(userId).catch((e) =>
+      console.error("recordUsage failed (non-fatal):", e)
+    );
+    const postStatus = await getStatus(userId).catch(() => null);
+
+    return res.json({ ...parsedResult, _quota: postStatus });
 
   } catch (error: any) {
     console.error("Analysis Error:", error);

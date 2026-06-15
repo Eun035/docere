@@ -15,10 +15,12 @@ import {
   ImageDown
 } from "lucide-react";
 import { saveMeditationCard } from "./utils/saveMeditationCard";
+import { getOrCreateUserId, fetchUsage, UsageStatus } from "./utils/userId";
 import { PresetInscription, AnalysisResult, HistoryItem } from "./types";
 import { PresetGallery } from "./components/PresetGallery";
 import { InscriptionHistory } from "./components/InscriptionHistory";
 import { CameraCapture } from "./components/CameraCapture";
+import { PaywallModal } from "./components/PaywallModal";
 
 export default function App() {
   // Input states
@@ -43,6 +45,11 @@ export default function App() {
   const [saveImageStatus, setSaveImageStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [isCameraOpen, setIsCameraOpen] = useState(false);
 
+  // Quota + payment
+  const [userId, setUserId] = useState<string>("");
+  const [usage, setUsage] = useState<UsageStatus | null>(null);
+  const [isPaywallOpen, setIsPaywallOpen] = useState(false);
+
   // Image input ref
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -56,7 +63,57 @@ export default function App() {
         console.error("Failed to parse history from localStorage", e);
       }
     }
-    // First-time visitors see the candlelight welcome screen — no auto-analysis preload.
+  }, []);
+
+  // Bootstrap anonymous ID + fetch initial usage + handle Toss payment redirect.
+  useEffect(() => {
+    const uid = getOrCreateUserId();
+    setUserId(uid);
+
+    const url = new URL(window.location.href);
+    const paymentSuccess = url.searchParams.get("paymentSuccess");
+    const paymentFail = url.searchParams.get("paymentFail");
+    const paymentKey = url.searchParams.get("paymentKey");
+    const orderId = url.searchParams.get("orderId");
+    const amount = url.searchParams.get("amount");
+    const uidFromUrl = url.searchParams.get("uid");
+
+    const cleanUrl = () => {
+      ["paymentSuccess", "paymentFail", "paymentKey", "orderId", "amount", "uid", "paymentType"].forEach(
+        (k) => url.searchParams.delete(k)
+      );
+      window.history.replaceState({}, "", url.pathname + (url.search || ""));
+    };
+
+    if (paymentSuccess && paymentKey && orderId && amount) {
+      const confirmUid = uidFromUrl || uid;
+      fetch("/api/payment/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: confirmUid,
+          paymentKey,
+          orderId,
+          amount: Number(amount),
+        }),
+      })
+        .then(async (r) => {
+          const j = await r.json().catch(() => ({}));
+          if (!r.ok) throw new Error(j?.error || "결제 확인 실패");
+          setUsage(j?.status ?? null);
+          setErrorMessage("✅ 결제가 완료되었습니다. 오늘 자정까지 무제한 분석이 가능합니다.");
+        })
+        .catch((e) => {
+          setErrorMessage(`결제 확인 중 오류: ${e?.message || e}`);
+        })
+        .finally(cleanUrl);
+    } else if (paymentFail) {
+      setErrorMessage("결제가 취소되었거나 실패했습니다.");
+      cleanUrl();
+      fetchUsage(uid).then(setUsage);
+    } else {
+      fetchUsage(uid).then(setUsage);
+    }
   }, []);
 
   // Save changes to localStorage helper
@@ -156,16 +213,27 @@ export default function App() {
         body: JSON.stringify({
           text: txt,
           image: cleanBase64,
-          imageMime: mimeType
+          imageMime: mimeType,
+          userId,
         }),
       });
+
+      if (response.status === 402) {
+        const errJson = await response.json().catch(() => ({}));
+        if (errJson?.status) setUsage(errJson.status);
+        setIsPaywallOpen(true);
+        setIsLoading(false);
+        return;
+      }
 
       if (!response.ok) {
         const errJson = await response.json();
         throw new Error(errJson.error || "비문 해석 요청에 실패하였습니다.");
       }
 
-      const result: AnalysisResult = await response.json();
+      const fullResponse: AnalysisResult & { _quota?: UsageStatus | null } = await response.json();
+      if (fullResponse._quota) setUsage(fullResponse._quota);
+      const { _quota: _ignored, ...result } = fullResponse;
       setActiveAnalysis(result);
 
       // 이미지에서 판독된 비문 텍스트가 있다면 발견구절 입력창(inputText)에 즉시 자동 동기화!
@@ -455,6 +523,31 @@ export default function App() {
                 )}
               </div>
 
+              {/* Quota status badge */}
+              {usage && (
+                <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-white border border-[#E6E2D3] text-[10px] font-sans">
+                  {usage.hasDayPass ? (
+                    <span className="text-[#8C7355] font-bold flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" /> 1일권 활성 · 무제한
+                    </span>
+                  ) : (
+                    <>
+                      <span className="text-stone-500">
+                        오늘 사용: <strong className="text-[#8C7355]">{usage.used}</strong> / {usage.limit}회
+                      </span>
+                      {usage.blocked && (
+                        <button
+                          onClick={() => setIsPaywallOpen(true)}
+                          className="text-[#8C7355] underline underline-offset-2 font-bold hover:text-[#725C42]"
+                        >
+                          1일권 ₩1,500
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
               {/* Action Buttons */}
               <div className="pt-2 flex gap-2">
                 <button
@@ -742,6 +835,14 @@ export default function App() {
         <CameraCapture
           onCapture={handleCameraCapture}
           onClose={() => setIsCameraOpen(false)}
+        />
+      )}
+
+      {isPaywallOpen && userId && (
+        <PaywallModal
+          userId={userId}
+          usage={usage}
+          onClose={() => setIsPaywallOpen(false)}
         />
       )}
 
