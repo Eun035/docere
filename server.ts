@@ -16,6 +16,29 @@ dotenv.config();
 const app = express();
 const PORT = 3000;
 
+// CORS — the Capacitor Android WebView runs from https://localhost and needs
+// to hit /api/* on the Vercel-hosted server. Browser SPA on the same origin
+// is unaffected by these headers.
+const ALLOWED_ORIGIN_PATTERNS: RegExp[] = [
+  /^https?:\/\/localhost(?::\d+)?$/, // local dev + Capacitor Android default
+  /^capacitor:\/\/localhost$/,        // Capacitor iOS default
+  /^https:\/\/.*\.vercel\.app$/,      // any Vercel preview or prod deployment
+];
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (typeof origin === "string" && ALLOWED_ORIGIN_PATTERNS.some((re) => re.test(origin))) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+  }
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+  next();
+});
+
 // Set up JSON body parsing with large limit to accept photo uploads in base64
 app.use(express.json({ limit: "15mb" }));
 

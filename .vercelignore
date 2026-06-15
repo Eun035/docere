@@ -6,3 +6,9 @@ dist
 .vscode
 .antigravity
 *.log
+
+# Capacitor / Android — not needed by the serverless deployment
+android
+ios
+resources
+capacitor.config.ts

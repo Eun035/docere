@@ -1,3 +1,5 @@
+import { apiUrl } from "./apiBase";
+
 const STORAGE_KEY = "verbum_vitae_uid_v1";
 
 /**
@@ -39,7 +41,7 @@ export interface UsageStatus {
 
 export async function fetchUsage(userId: string): Promise<UsageStatus | null> {
   try {
-    const res = await fetch(`/api/usage?userId=${encodeURIComponent(userId)}`);
+    const res = await fetch(apiUrl(`/api/usage?userId=${encodeURIComponent(userId)}`));
     if (!res.ok) return null;
     return (await res.json()) as UsageStatus;
   } catch {

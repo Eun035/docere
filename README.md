@@ -225,6 +225,71 @@ flowchart LR
 
 ---
 
+## 📱 Android App Bundle (AAB) 빌드
+
+내부 테스트용 `.aab` 생성 경로입니다. (정식 스토어 출시 시점에는 토스 결제 코드를 Google Play Billing으로 교체하거나 디지털 결제를 제거해야 정책 위반을 피할 수 있습니다.)
+
+### 사전 준비
+
+1. **Android Studio** 설치 (https://developer.android.com/studio) — Android SDK + Build Tools가 함께 설치됨
+2. **JDK 17+** (Android Studio가 번들로 제공)
+3. 빌드 시 사용할 **Keystore** (서명용) — Android Studio에서 생성 가능
+
+### 첫 빌드 (1회만)
+
+```bash
+# 1) Vite 웹 자산 + Capacitor Android 네이티브 프로젝트 생성
+npm run build:web
+npx cap add android        # → android/ 디렉토리 생성
+
+# 2) 아이콘 + 스플래시 자동 생성 (책 위 촛불 디자인 그대로)
+npm run cap:assets
+
+# 3) 자산 동기화
+npx cap sync android
+```
+
+### 일상 빌드 사이클
+
+```bash
+# 코드 수정 → 웹 빌드 + Android 동기화를 한 번에:
+npm run cap:sync
+
+# Android Studio에서 열기:
+npm run cap:open
+# 또는:  npx cap open android
+```
+
+### AAB 생성 (Android Studio 안에서)
+
+1. `Build` 메뉴 → `Generate Signed App Bundle / APK...`
+2. `Android App Bundle` 선택 → Next
+3. Keystore 선택(없으면 `Create new...`) → 비밀번호 입력
+4. `release` 빌드 → Finish
+5. 결과물: `android/app/release/app-release.aab`
+
+### 배포 시 환경 변수
+
+Capacitor WebView는 `https://localhost`에서 SPA를 서빙하지만 `/api/*`는 외부(Vercel)를 호출해야 합니다. **빌드 직전**에 `.env`(또는 빌드 환경)에 다음을 지정하세요:
+
+```env
+VITE_API_BASE_URL=https://docere-7.vercel.app
+VITE_TOSS_CLIENT_KEY=test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm
+```
+
+그리고 Vercel 측 환경 변수에는 (이미 안내된 것 외에) 추가 설정 불필요 — CORS는 코드에서 `localhost` / `capacitor://localhost` / `*.vercel.app`를 모두 허용합니다.
+
+### Google Play Console 내부 테스트 업로드
+
+1. Play Console → `내부 테스트` 트랙 생성
+2. AAB 업로드
+3. 테스터 이메일/그룹 등록 → 가입 링크 공유
+4. 테스터는 링크로 베타 가입 → 일반 Play 스토어에서 다운로드 가능
+
+> 정식 출시 전에는 토스 결제·1일권 페이월 코드를 제거하거나 Play Billing으로 전환해야 정책 심사를 통과합니다.
+
+---
+
 ## ☁️ 배포 — Vercel
 
 이 저장소는 Vercel serverless 함수로 즉시 배포되도록 설정되어 있습니다.

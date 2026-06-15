@@ -9,9 +9,18 @@
     "start": "node dist/server.cjs",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
-    "icons": "node scripts/generate-icons.mjs"
+    "icons": "node scripts/generate-icons.mjs",
+    "build:web": "vite build",
+    "cap:add:android": "cap add android",
+    "cap:sync": "vite build && cap sync android",
+    "cap:open": "cap open android",
+    "cap:assets": "node scripts/generate-android-assets.mjs && capacitor-assets generate --android"
   },
   "dependencies": {
+    "@capacitor/android": "^8.4.0",
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.4.0",
+    "@capacitor/core": "^8.4.0",
     "@google/genai": "^2.4.0",
     "@tailwindcss/vite": "^4.1.14",
     "@tosspayments/tosspayments-sdk": "^2.7.1",

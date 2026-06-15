@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Verbum Vitae</string>
+    <string name="title_activity_main">Verbum Vitae</string>
+    <string name="package_name">com.jey.docere</string>
+    <string name="custom_url_scheme">com.jey.docere</string>
+</resources>

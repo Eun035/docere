@@ -12,10 +12,12 @@ import {
   AlertTriangle,
   Share2,
   Copy,
-  ImageDown
+  ImageDown,
+  Crosshair
 } from "lucide-react";
 import { saveMeditationCard } from "./utils/saveMeditationCard";
 import { getOrCreateUserId, fetchUsage, UsageStatus } from "./utils/userId";
+import { apiUrl } from "./utils/apiBase";
 import { PresetInscription, AnalysisResult, HistoryItem } from "./types";
 import { PresetGallery } from "./components/PresetGallery";
 import { InscriptionHistory } from "./components/InscriptionHistory";
@@ -49,6 +51,38 @@ export default function App() {
   const [userId, setUserId] = useState<string>("");
   const [usage, setUsage] = useState<UsageStatus | null>(null);
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
+
+  // GPS auto-fill for the pilgrimage location field
+  const [gpsStatus, setGpsStatus] = useState<"idle" | "locating">("idle");
+
+  const handleAutoFillLocation = () => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setErrorMessage("이 기기는 위치 정보를 지원하지 않습니다.");
+      return;
+    }
+    setGpsStatus("locating");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude.toFixed(5);
+        const lng = pos.coords.longitude.toFixed(5);
+        setLocationName(`현재 위치 (${lat}, ${lng})`);
+        setGpsStatus("idle");
+      },
+      (err) => {
+        setGpsStatus("idle");
+        if (err.code === err.PERMISSION_DENIED) {
+          setErrorMessage("위치 권한이 거부되었습니다. 설정에서 위치 접근을 허용해 주세요.");
+        } else if (err.code === err.POSITION_UNAVAILABLE) {
+          setErrorMessage("현재 위치를 확인할 수 없습니다. 실내라면 창가로 이동해 보세요.");
+        } else if (err.code === err.TIMEOUT) {
+          setErrorMessage("위치 확인 시간이 초과되었습니다. 다시 시도해 주세요.");
+        } else {
+          setErrorMessage(err.message || "위치 조회 중 오류가 발생했습니다.");
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
+  };
 
   // Image input ref
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -87,7 +121,7 @@ export default function App() {
 
     if (paymentSuccess && paymentKey && orderId && amount) {
       const confirmUid = uidFromUrl || uid;
-      fetch("/api/payment/confirm", {
+      fetch(apiUrl("/api/payment/confirm"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -205,7 +239,7 @@ export default function App() {
         cleanBase64 = imgData.split(",")[1] || imgData;
       }
 
-      const response = await fetch("/api/analyze", {
+      const response = await fetch(apiUrl("/api/analyze"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -428,8 +462,22 @@ export default function App() {
                     placeholder="예: 로마 판테온, 바티칸 미술관, 톨레도 성당..."
                     value={locationName}
                     onChange={(e) => setLocationName(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 bg-white border border-[#D9D1C1] rounded-lg text-xs font-sans focus:outline-none focus:border-[#8C7355] focus:ring-1 focus:ring-[#8C7355] text-stone-800"
+                    className="w-full pl-9 pr-10 py-2 bg-white border border-[#D9D1C1] rounded-lg text-xs font-sans focus:outline-none focus:border-[#8C7355] focus:ring-1 focus:ring-[#8C7355] text-stone-800"
                   />
+                  <button
+                    type="button"
+                    onClick={handleAutoFillLocation}
+                    disabled={gpsStatus === "locating"}
+                    title="GPS로 현재 위치 자동 입력"
+                    aria-label="GPS로 현재 위치 자동 입력"
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1.5 rounded text-[#8C7355] hover:bg-[#F4EFE6] disabled:opacity-50 disabled:cursor-wait transition-colors"
+                  >
+                    {gpsStatus === "locating" ? (
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Crosshair className="w-3.5 h-3.5" />
+                    )}
+                  </button>
                 </div>
               </div>
 

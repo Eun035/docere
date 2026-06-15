@@ -6,3 +6,20 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Capacitor / Android build artifacts (the android/ project itself IS committed
+# so native edits persist, but Gradle's own .gitignore inside it covers caches.)
+android/app/build/
+android/.gradle/
+android/build/
+android/local.properties
+android/captures/
+android/release/
+android/app/release/
+*.keystore
+*.jks
+
+# iOS (not currently set up but pre-empts future additions)
+ios/App/Pods/
+ios/App/build/
+ios/DerivedData/
