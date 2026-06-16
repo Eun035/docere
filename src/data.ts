@@ -60,5 +60,45 @@ export const PRESET_INSCRIPTIONS: PresetInscription[] = [
     imageAlt: "Gothic Church Crucifixion Altarpiece",
     imageUrl: "https://images.unsplash.com/photo-1478147427282-58a87a120781?auto=format&fit=crop&q=80&w=800",
     description: "예수님이 십자가 처형을 당하실 때 빌라도 장독에 의해 히브리어, 그리스어, 라틴어로 적혔던 죄패에서 기원합니다. '유다인들의 왕 나자렛 예수'라는 구원사의 상징적 고백이 축약되어 있습니다."
+  },
+  {
+    id: "lourdes-grotto",
+    title: "루르드 성모 발현 동굴 명문",
+    originalText: "EGO SVM IMMACVLATA CONCEPTIO",
+    location: "마사비엘 동굴 (Grotte de Massabielle) 성모상 기단",
+    city: "루르드 (Lourdes, France)",
+    imageAlt: "Lourdes Sanctuary Basilica at dusk",
+    imageUrl: "https://images.unsplash.com/photo-1543248939-4296e1fea89b?auto=format&fit=crop&q=80&w=800",
+    description: "1858년 3월 25일 성 베르나데트 수비루에게 발현하신 성모님께서 '나는 원죄 없는 잉태이다'라고 응답하신 라틴어 문구가 동굴의 성모상 발치에 새겨져 있습니다. 비오 9세의 무염시태 교의 선포(1854) 직후의 천상 응답이라는 점에서 영적 무게가 깊습니다."
+  },
+  {
+    id: "montecassino-rule",
+    title: "몬테카시노 베네딕도 수도원 회랑",
+    originalText: "ORA ET LABORA",
+    location: "몬테카시노 대수도원 정문 및 회랑 (성 베네딕토 묘소)",
+    city: "몬테카시노 (Monte Cassino, Italy)",
+    imageAlt: "Monte Cassino Abbey cloister",
+    imageUrl: "https://images.unsplash.com/photo-1545158539-1709a4d23c1c?auto=format&fit=crop&q=80&w=800",
+    description: "529년 성 베네딕토가 직접 세운 서방 수도 영성의 모태입니다. 「베네딕도 규칙서」의 정수를 응축한 '기도하고 일하라'는 표어가 수도원 정문과 회랑 곳곳에 새겨져, 14세기 이상 이어진 수도자 일과의 호흡을 전해줍니다."
+  },
+  {
+    id: "notredame-portal",
+    title: "파리 노트르담 서쪽 정문 마리아 포털",
+    originalText: "AVE MARIA GRATIA PLENA DOMINVS TECVM",
+    location: "서쪽 정문 왼쪽 포털 (Portail de la Vierge) 마리아상 기단",
+    city: "파리 (Paris, France)",
+    imageAlt: "Notre-Dame de Paris western façade",
+    imageUrl: "https://images.unsplash.com/photo-1546412414-e1885259563b?auto=format&fit=crop&q=80&w=800",
+    description: "루카 복음 1장 28절, 천사 가브리엘이 성모님께 전한 인사를 그대로 옮긴 라틴어 명문입니다. '은총이 가득한 마리아여, 주께서 함께 계시도다.' 13세기 고딕 건축이 빚어낸 영적 정수가 서쪽 정문 마리아 포털의 핵심 메시지로 응축되어 있습니다."
+  },
+  {
+    id: "czestochowa-mother",
+    title: "체스토호바 야스나구라 검은 성모 제대",
+    originalText: "MONSTRA TE ESSE MATREM",
+    location: "야스나구라 (Jasna Góra) 수도원 본당 검은 성모 제대 상부",
+    city: "체스토호바 (Częstochowa, Poland)",
+    imageAlt: "Jasna Góra Monastery in Częstochowa",
+    imageUrl: "https://images.unsplash.com/photo-1505968409348-bd000797c92e?auto=format&fit=crop&q=80&w=800",
+    description: "폴란드 영적 수도의 심장. 찬가 「Ave Maris Stella」에서 가져온 '어머니이심을 보여주소서'가 검은 성모 제대 상부 명문으로 새겨져 있습니다. 파울리스타 수도회 본원이자 요한 바오로 2세 교황이 가장 자주 찾으신 마리아 성지입니다."
   }
 ];
