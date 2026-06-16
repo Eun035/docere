@@ -1,4 +1,4 @@
-import { getStore } from "./storage";
+import { getStore } from "./storage.js";
 
 export const DAILY_FREE_LIMIT = 3;
 export const DAY_PASS_PRICE_KRW = 1500;

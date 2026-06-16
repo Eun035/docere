@@ -1,6 +1,6 @@
 // Vercel serverless entry point for GET /api/usage
 // Re-uses the Express app defined in ../server.ts (the route handler matches /api/usage).
-import app from "../server";
+import app from "../server.js";
 
 export default app;
 

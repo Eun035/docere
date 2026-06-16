@@ -9,7 +9,7 @@ import {
   getStatus,
   grantDayPass,
   recordUsage,
-} from "./src/server/quota";
+} from "./src/server/quota.js";
 
 dotenv.config();
 
