@@ -656,9 +656,9 @@ export default function App() {
         </div>
       </aside>
 
-      {/* Main Analysis Panel — only rendered once an analysis result (or error) exists.
-          On the empty welcome state the sidebar stands alone. */}
-      {(activeAnalysis || errorMessage) && (
+      {/* Main Analysis Panel — visible while analyzing (so the user gets feedback),
+          when an error needs surfacing, or once a result is ready. */}
+      {(activeAnalysis || errorMessage || isLoading) && (
       <main className="flex-1 flex flex-col p-6 md:p-12 relative overflow-y-auto">
 
         {/* Decorative Background Cross/Rosette watermark */}
@@ -688,6 +688,31 @@ export default function App() {
             >
               <X className="w-3.5 h-3.5" />
             </button>
+          </div>
+        )}
+
+        {/* Loading state — visible after preset click / analyze press while the
+            Gemini call is in flight. Replaces the previous "nothing happens"
+            blank panel that made the wait feel longer than it actually was. */}
+        {isLoading && !activeAnalysis && (
+          <div className="flex-1 flex flex-col items-center justify-center text-center max-w-3xl mx-auto py-12 animate-pulse">
+            <div className="text-[10px] uppercase tracking-[0.4em] text-[#8C7355] font-sans font-bold mb-3">
+              Lumen in Tenebris
+            </div>
+            <RefreshCw className="w-10 h-10 text-[#8C7355] animate-spin mb-6" />
+            <h2 className="text-2xl md:text-3xl font-serif italic text-stone-800 mb-3">
+              비문을 해독하는 중입니다
+            </h2>
+            <ul className="text-xs font-sans text-stone-500 space-y-1.5 leading-relaxed">
+              <li>📜 원문 정제 (마모 흔적 · 약어 복원)</li>
+              <li>📖 성경 매칭 (장 · 절 대조)</li>
+              <li>✍️ 직역 및 가톨릭 의역</li>
+              <li>💡 어원 · 문법 해설</li>
+              <li>🕊️ 순례자 묵상 작성</li>
+            </ul>
+            <p className="mt-6 text-[10px] font-sans text-stone-400 uppercase tracking-widest">
+              평균 5~10초 소요
+            </p>
           </div>
         )}
 
