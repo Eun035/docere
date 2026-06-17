@@ -238,7 +238,41 @@ ${text ? `라틴어/종교 문구: "${text}"` : "첨부된 비문 이미지 분�
 
   } catch (error: any) {
     console.error("Analysis Error:", error);
-    return res.status(500).json({ error: error.message || "비문 분석 도중 오류가 발생했습니다." });
+
+    // Detect Gemini quota / rate-limit errors and surface a friendly Korean
+    // message instead of leaking Google's raw JSON to the end user.
+    const rawMessage: string = String(error?.message || "");
+    const status: number | undefined = error?.status ?? error?.code;
+    const isQuotaExhausted =
+      status === 429 ||
+      rawMessage.includes("RESOURCE_EXHAUSTED") ||
+      rawMessage.includes("Quota exceeded") ||
+      /quota/i.test(rawMessage);
+
+    if (isQuotaExhausted) {
+      // Try to extract the retry-after hint Gemini ships in the error body.
+      let retryAfterSeconds: number | null = null;
+      const retryMatch =
+        rawMessage.match(/retry in ([\d.]+)\s*s/i) ||
+        rawMessage.match(/retryDelay"\s*:\s*"(\d+)s/i);
+      if (retryMatch) retryAfterSeconds = Math.ceil(parseFloat(retryMatch[1]));
+
+      const waitNote = retryAfterSeconds
+        ? `약 ${retryAfterSeconds}초 후`
+        : "잠시 후";
+
+      return res.status(429).json({
+        error:
+          `도슨트 서버의 무료 분석 한도가 일시적으로 초과되었습니다. ${waitNote} 다시 시도해 주세요. ` +
+          `(원인: Gemini API 무료 티어 한도. 관리자가 유료 결제를 활성화하면 즉시 해소됩니다.)`,
+        code: "GEMINI_QUOTA_EXCEEDED",
+        retryAfterSeconds,
+      });
+    }
+
+    return res.status(500).json({
+      error: "비문 분석 도중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.",
+    });
   }
 });
 
